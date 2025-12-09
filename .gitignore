@@ -1,0 +1,8 @@
+# Aiken compilation artifacts
+onchain/artifacts/
+# Aiken's project working directory
+onchain/build/
+# Aiken's default documentation export
+onchain/docs/
+
+offchain/gen

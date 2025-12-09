@@ -1,0 +1,84 @@
+party Buyer;
+
+party Ticketer;
+
+env {
+    admin_token_policy: Bytes,
+    admin_token_name: Bytes,
+    ticket_policy: Bytes,
+}
+
+type TicketerDatum {
+    ticket_counter: Int,
+    ticket_policy: Bytes,
+}
+
+type TicketerRedeemer {
+    BuyTicket,
+}
+
+type TicketPolicyRedeemer {
+    MintTicket,
+}
+
+tx buy_ticket(
+    ticket_name: Bytes, // TICKET + number
+) {
+    locals {
+        new_ticket: AnyAsset(ticket_policy, ticket_name, 1),
+        admin_token: AnyAsset(admin_token_policy, admin_token_name, 1),
+        ticket_price: 10000000,
+
+        // UTXo Lives on Deploy Address
+        ticketer_policy_ref: 0x29ea267e0b0e1eb9af51d2a501b8c81f813cb83130f9166bd07abc8d4565811a#0,
+    }
+
+    // validity {
+    //     until_slot: tip,
+    // }
+
+    reference TicketerRef {
+        ref: ticketer_policy_ref,
+    }
+
+    input* gas {
+        from: Buyer,
+        min_amount: fees + Ada(ticket_price) + min_utxo(ticket_owner),
+    }
+
+    input ticketer {
+        from: Ticketer,
+        min_amount: admin_token,
+        datum_is: TicketerDatum,
+        redeemer: TicketerRedeemer::BuyTicket {},
+    }
+    
+    mint {
+        amount: new_ticket,
+        redeemer: TicketPolicyRedeemer::MintTicket {},
+    }
+
+    output ticket_owner {
+        to: Buyer,
+        amount: new_ticket + min_utxo(ticket_owner),
+    }
+
+    output updated_ticketer {
+        to: Ticketer,
+        amount: ticketer + Ada(ticket_price),
+        datum: TicketerDatum {
+            ticket_counter: ticketer.ticket_counter + 1,
+            ticket_policy: ticketer.ticket_policy,
+        },
+    }
+
+    output gas_change {
+        to: Buyer,
+        amount: gas - fees - Ada(ticket_price) - min_utxo(ticket_owner),
+    }
+
+    collateral {
+        from: Buyer,
+        min_amount: fees,
+    }
+}

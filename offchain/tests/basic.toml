@@ -1,0 +1,10 @@
+file="./main.tx3"
+
+[[wallets]]
+name = "bob"
+balance = 10000000
+
+[[wallets]]
+name = "alice"
+balance = 5000000
+

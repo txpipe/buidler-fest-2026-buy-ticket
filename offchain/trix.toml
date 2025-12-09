@@ -1,0 +1,37 @@
+[protocol]
+name = "ticketer-offchain"
+scope = "txpipe"
+version = "0.0.0"
+description = ""
+main = "main.tx3"
+
+[registry]
+url = "https://tx3.land"
+
+[profiles.preview]
+chain = "CardanoPreview"
+
+[profiles.mainnet]
+chain = "CardanoMainnet"
+
+[profiles.devnet]
+chain = "CardanoDevnet"
+
+[profiles.preprod]
+chain = "CardanoPreprod"
+
+[[wallets]]
+name = "alice"
+random_key = true
+
+[[wallets]]
+name = "bob"
+random_key = true
+
+[[bindings]]
+output_dir = "./gen/typescript"
+
+[bindings.template]
+repo = "tx3-lang/web-sdk"
+path = ".trix/client-lib"
+ref = "bindgen-v1alpha2"
