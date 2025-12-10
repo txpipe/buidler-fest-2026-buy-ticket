@@ -1,0 +1,24 @@
+{
+  "name": "ticketer-offchain",
+  "version": "0.0.0",
+  "description": "A simple Node.js library for the TX3 protocol",
+  "main": "dist/protocol.js",
+  "types": "dist/protocol.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "send_test": "tsx send_test.ts"
+  },
+  "dependencies": {
+    "@emurgo/cardano-serialization-lib-nodejs": "^15.0.3",
+    "@noble/curves": "^1.9.7",
+    "tx3-sdk": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

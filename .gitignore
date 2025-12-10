@@ -5,4 +5,4 @@ onchain/build/
 # Aiken's default documentation export
 onchain/docs/
 
-offchain/gen
+offchain/node_modules

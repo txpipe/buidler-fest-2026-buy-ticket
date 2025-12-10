@@ -2,7 +2,7 @@ party Buyer;
 
 party Ticketer;
 
-party Beneficiary;
+party Treasury;
 
 env {
     admin_token_policy: Bytes,
@@ -34,17 +34,13 @@ tx buy_ticket(
         ticketer_script_ref: 0xd836c5493b2e3f95e1f1db8cc9c83b00c399f582dcb799ab4061b421e0513693#0,
     }
 
-    // validity {
-    //     until_slot: tip,
-    // }
-
     reference TicketerRef {
         ref: ticketer_script_ref,
     }
 
-    input* gas {
+    input* payment {
         from: Buyer,
-        min_amount: fees + Ada(ticket_price) + min_utxo(ticket_owner),
+        min_amount: fees + Ada(ticket_price) + min_utxo(payment_change),
     }
 
     input ticketer {
@@ -59,11 +55,6 @@ tx buy_ticket(
         redeemer: TicketPolicyRedeemer::MintTicket {},
     }
 
-    output ticket_owner {
-        to: Buyer,
-        amount: new_ticket + min_utxo(ticket_owner),
-    }
-
     output updated_ticketer {
         to: Ticketer,
         amount: ticketer,
@@ -74,13 +65,13 @@ tx buy_ticket(
     }
 
     output pay_for_ticket {
-        to: Beneficiary,
+        to: Treasury,
         amount: Ada(ticket_price),
     }
 
-    output gas_change {
+    output payment_change {
         to: Buyer,
-        amount: gas - fees - Ada(ticket_price) - min_utxo(ticket_owner),
+        amount: payment - fees - Ada(ticket_price) + new_ticket,
     }
 
     collateral {

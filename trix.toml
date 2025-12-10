@@ -29,7 +29,8 @@ name = "bob"
 random_key = true
 
 [[bindings]]
-output_dir = "./gen/typescript"
+output_dir = "./offchain"
+# options = { standalone = true }
 
 [bindings.template]
 repo = "tx3-lang/web-sdk"
