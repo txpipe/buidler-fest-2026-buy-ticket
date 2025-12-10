@@ -1,11 +1,9 @@
 use aiken/collection/dict
 use aiken/interval.{Finite, Interval, IntervalBound}
-use cardano/address.{Address, Script}
-use cardano/assets.{
-  AssetName, ada_asset_name, ada_policy_id, add, from_asset, from_lovelace,
-}
+use cardano/address.{Address, Script, VerificationKey}
+use cardano/assets.{AssetName, add, from_asset, from_lovelace}
 use cardano/transaction.{
-  InlineDatum, Input, Mint, Output, OutputReference, Spend, Transaction,
+  InlineDatum, Input, Mint, NoDatum, Output, OutputReference, Spend, Transaction,
 }
 use ticketer
 use ticketer/test_mock as mock
@@ -26,6 +24,7 @@ type BuyTestOptions {
   ticket_minted_amount: Int,
   ticket_token_name: AssetName,
   spend_redeemer_present: Bool,
+  include_beneficiary_output: Bool,
 }
 
 fn default_buy_options() {
@@ -40,12 +39,13 @@ fn default_buy_options() {
     ticket_minted_amount: 1,
     ticket_token_name: "TICKET7",
     spend_redeemer_present: True,
+    include_beneficiary_output: True,
   }
 }
 
 fn construct_tx(
   options: BuyTestOptions,
-) -> (Transaction, TicketerDatum, AssetClass, Int) {
+) -> (Transaction, TicketerDatum, AssetClass, Int, Address) {
   let ticket_policy = mock.ticketer_policy
   // Reusing a mock policy
   let admin_token =
@@ -55,6 +55,11 @@ fn construct_tx(
     Address {
       payment_credential: Script(mock.ticketer_credential),
       // Reusing a mock credential
+      stake_credential: None,
+    }
+  let beneficiary =
+    Address {
+      payment_credential: VerificationKey(#"beef"),
       stake_credential: None,
     }
   let ticketer_value =
@@ -81,20 +86,7 @@ fn construct_tx(
   let ticketer_out =
     Output {
       address: ticketer_address,
-      value: if options.pay_price {
-        ticketer_in.output.value
-          |> add(
-              ada_policy_id,
-              ada_asset_name,
-              if options.preserve_price {
-                options.ticket_price
-              } else {
-                options.ticket_price + 1
-              },
-            )
-      } else {
-        ticketer_in.output.value
-      },
+      value: ticketer_in.output.value,
       datum: InlineDatum(
         TicketerDatum {
           ticket_counter: if options.update_counter {
@@ -112,11 +104,33 @@ fn construct_tx(
       reference_script: None,
     }
 
+  let beneficiary_out =
+    Output {
+      address: beneficiary,
+      value: from_lovelace(
+        if options.pay_price {
+          if options.preserve_price {
+            options.ticket_price
+          } else {
+            options.ticket_price - 1
+          }
+        } else {
+          0
+        },
+      ),
+      datum: NoDatum,
+      reference_script: None,
+    }
+
   let tx =
     Transaction {
       inputs: [ticketer_in],
       reference_inputs: [],
-      outputs: [ticketer_out],
+      outputs: if options.include_beneficiary_output {
+        [ticketer_out, beneficiary_out]
+      } else {
+        [ticketer_out]
+      },
       fee: 5_000,
       mint: from_asset(
         ticket_policy,
@@ -180,17 +194,19 @@ fn construct_tx(
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  (tx, ticketer_datum, admin_token, options.ticket_price)
+  (tx, ticketer_datum, admin_token, options.ticket_price, beneficiary)
 }
 
 fn buy_ticket(options: BuyTestOptions) -> Bool {
-  let (tx, ticketer_datum, admin_token, ticket_price) = construct_tx(options)
+  let (tx, ticketer_datum, admin_token, ticket_price, beneficiary) =
+    construct_tx(options)
   let redeemer = BuyTicket
 
   let result =
     ticketer.ticketer.spend(
       admin_token,
       ticket_price,
+      beneficiary,
       Some(ticketer_datum),
       redeemer,
       OutputReference { transaction_id: mock.transaction_id_1, output_index: 0 },
@@ -200,11 +216,13 @@ fn buy_ticket(options: BuyTestOptions) -> Bool {
 }
 
 fn mint_ticket(options: BuyTestOptions) -> Bool {
-  let (tx, _ticketer_datum, admin_token, ticket_price) = construct_tx(options)
+  let (tx, _ticketer_datum, admin_token, ticket_price, beneficiary) =
+    construct_tx(options)
   let ticket_policy = mock.ticketer_policy
   ticketer.ticketer.mint(
     admin_token,
     ticket_price,
+    beneficiary,
     MintTicket,
     ticket_policy,
     tx,
@@ -262,5 +280,14 @@ test ticket_wrong_amount() fail {
 test wrong_ticket_name() fail {
   buy_ticket(
     BuyTestOptions { ..default_buy_options(), ticket_token_name: "TICKET8" },
+  )
+}
+
+test beneficiary_missing() fail {
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      include_beneficiary_output: False,
+    },
   )
 }

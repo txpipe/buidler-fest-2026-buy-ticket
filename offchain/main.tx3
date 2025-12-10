@@ -2,6 +2,8 @@ party Buyer;
 
 party Ticketer;
 
+party Beneficiary;
+
 env {
     admin_token_policy: Bytes,
     admin_token_name: Bytes,
@@ -29,8 +31,7 @@ tx buy_ticket(
         admin_token: AnyAsset(admin_token_policy, admin_token_name, 1),
         ticket_price: 10000000,
 
-        // UTXo Lives on Deploy Address
-        ticketer_policy_ref: 0x29ea267e0b0e1eb9af51d2a501b8c81f813cb83130f9166bd07abc8d4565811a#0,
+        ticketer_script_ref: 0xd836c5493b2e3f95e1f1db8cc9c83b00c399f582dcb799ab4061b421e0513693#0,
     }
 
     // validity {
@@ -38,7 +39,7 @@ tx buy_ticket(
     // }
 
     reference TicketerRef {
-        ref: ticketer_policy_ref,
+        ref: ticketer_script_ref,
     }
 
     input* gas {
@@ -65,11 +66,16 @@ tx buy_ticket(
 
     output updated_ticketer {
         to: Ticketer,
-        amount: ticketer + Ada(ticket_price),
+        amount: ticketer,
         datum: TicketerDatum {
             ticket_counter: ticketer.ticket_counter + 1,
             ticket_policy: ticketer.ticket_policy,
         },
+    }
+
+    output pay_for_ticket {
+        to: Beneficiary,
+        amount: Ada(ticket_price),
     }
 
     output gas_change {

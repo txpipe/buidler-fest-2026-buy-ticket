@@ -3,8 +3,9 @@ use aiken/collection/list
 use aiken/collection/pairs
 use aiken/primitive/bytearray.{concat, from_string}
 use aiken/primitive/string
+use cardano/address.{Address}
 use cardano/assets.{
-  PolicyId, ada_asset_name, ada_policy_id, add, from_asset, quantity_of, tokens,
+  PolicyId, ada_asset_name, ada_policy_id, from_asset, quantity_of, tokens,
 }
 use cardano/transaction.{
   InlineDatum, Output, OutputReference, Spend, Transaction, find_input,
@@ -14,7 +15,11 @@ use ticketer/types.{
   TicketerDatum, TicketerRedeemer,
 }
 
-validator ticketer(admin_token: AssetClass, ticket_price: Int) {
+validator ticketer(
+  admin_token: AssetClass,
+  ticket_price: Int,
+  beneficiary: Address,
+) {
   spend(
     datum: Option<TicketerDatum>,
     redeemer: TicketerRedeemer,
@@ -54,15 +59,24 @@ validator ticketer(admin_token: AssetClass, ticket_price: Int) {
     let must_hold_admin_token =
       quantity_of(ticketer_value, admin_token.policy, admin_token.name) > 0
 
-    let must_add_price =
-      ticketer_value == (
-        ticketer_input.output.value
-          |> add(ada_policy_id, ada_asset_name, ticket_price)
+    let must_maintain_value = ticketer_value == ticketer_input.output.value
+
+    let must_pay_beneficiary =
+      list.any(
+        outputs,
+        fn(output) {
+          output.address == beneficiary && quantity_of(
+            output.value,
+            ada_policy_id,
+            ada_asset_name,
+          ) >= ticket_price
+        },
       )
 
     let must_have_correct_value = and {
         must_hold_admin_token?,
-        must_add_price?,
+        must_maintain_value?,
+        must_pay_beneficiary?,
       }
 
     // Check minting
