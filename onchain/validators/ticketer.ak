@@ -18,7 +18,8 @@ use ticketer/types.{
 validator ticketer(
   admin_token: AssetClass,
   ticket_price: Int,
-  beneficiary: Address,
+  treasury: Address,
+  max_tickets: Int,
 ) {
   spend(
     datum: Option<TicketerDatum>,
@@ -29,6 +30,8 @@ validator ticketer(
     let Transaction { inputs, outputs, mint, .. } = self
     expect Some(datum) = datum
     let TicketerDatum { ticket_counter, ticket_policy } = datum
+
+    expect ticket_counter + 1 < max_tickets
 
     expect Some(ticketer_input) = find_input(inputs, utxo)
 
@@ -61,11 +64,11 @@ validator ticketer(
 
     let must_maintain_value = ticketer_value == ticketer_input.output.value
 
-    let must_pay_beneficiary =
+    let must_pay_treasury =
       list.any(
         outputs,
         fn(output) {
-          output.address == beneficiary && quantity_of(
+          output.address == treasury && quantity_of(
             output.value,
             ada_policy_id,
             ada_asset_name,
@@ -76,7 +79,7 @@ validator ticketer(
     let must_have_correct_value = and {
         must_hold_admin_token?,
         must_maintain_value?,
-        must_pay_beneficiary?,
+        must_pay_treasury?,
       }
 
     // Check minting

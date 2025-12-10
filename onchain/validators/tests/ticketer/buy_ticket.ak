@@ -25,6 +25,7 @@ type BuyTestOptions {
   ticket_token_name: AssetName,
   spend_redeemer_present: Bool,
   include_beneficiary_output: Bool,
+  max_tickets: Int,
 }
 
 fn default_buy_options() {
@@ -40,6 +41,7 @@ fn default_buy_options() {
     ticket_token_name: "TICKET7",
     spend_redeemer_present: True,
     include_beneficiary_output: True,
+    max_tickets: 100,
   }
 }
 
@@ -207,6 +209,7 @@ fn buy_ticket(options: BuyTestOptions) -> Bool {
       admin_token,
       ticket_price,
       beneficiary,
+      options.max_tickets,
       Some(ticketer_datum),
       redeemer,
       OutputReference { transaction_id: mock.transaction_id_1, output_index: 0 },
@@ -223,6 +226,7 @@ fn mint_ticket(options: BuyTestOptions) -> Bool {
     admin_token,
     ticket_price,
     beneficiary,
+    options.max_tickets,
     MintTicket,
     ticket_policy,
     tx,
@@ -290,4 +294,12 @@ test beneficiary_missing() fail {
       include_beneficiary_output: False,
     },
   )
+}
+
+test max_tickets_reached() fail {
+  buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 8 })
+}
+
+test max_tickets_ok() {
+  buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 9 })
 }
