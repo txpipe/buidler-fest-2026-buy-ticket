@@ -60,7 +60,7 @@ You need to implement a script that calls the `buyTicketTx` function from the ge
 
 Most of the protocol parameters (like policies and contract addresses) are provided in the `.env` file included by network. You mainly need to provide:
 
-*   `ticketName`: The name of the ticket to mint. It must follow the format `TICKET<N>`, where `<N>` is the next available number (current ticket counter + 1).
+*   `ticketName`: The name of the ticket to mint. It must follow the format `TICKET<N>`, where `<N>` is the current ticket counter.
 *   `buyer`: Your wallet address.
 
 The other parameters (`adminTokenName`, `adminTokenPolicy`, `ticketPolicy`, `ticketer`, `treasury`) should be loaded from the environment variables.

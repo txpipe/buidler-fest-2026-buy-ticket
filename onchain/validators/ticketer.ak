@@ -31,7 +31,7 @@ validator ticketer(
     expect Some(datum) = datum
     let TicketerDatum { ticket_counter, ticket_policy } = datum
 
-    expect ticket_counter + 1 < max_tickets
+    expect ticket_counter < max_tickets
 
     expect Some(ticketer_input) = find_input(inputs, utxo)
 

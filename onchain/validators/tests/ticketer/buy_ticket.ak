@@ -297,9 +297,18 @@ test beneficiary_missing() fail {
 }
 
 test max_tickets_reached() fail {
-  buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 8 })
+  // As counter starts at 0, setting it to 4 with max_tickets 4 means limit reached
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      ticket_counter: 4,
+      ticket_token_name: "TICKET4",
+      max_tickets: 4,
+    },
+  )
 }
 
 test max_tickets_ok() {
-  buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 9 })
+  // Default counter is 7, so with max_tickets 8 it should pass
+  buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 8 })
 }
