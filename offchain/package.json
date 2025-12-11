@@ -1,5 +1,5 @@
 {
-  "name": "ticketer-offchain",
+  "name": "ticketer-protocol",
   "version": "0.0.0",
   "description": "A simple Node.js library for the TX3 protocol",
   "main": "dist/protocol.js",

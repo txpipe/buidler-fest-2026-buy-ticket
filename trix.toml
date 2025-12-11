@@ -1,8 +1,8 @@
 [protocol]
-name = "ticketer-offchain"
+name = "ticketer-protocol"
 scope = "txpipe"
-version = "0.0.0"
-description = ""
+version = "0.1.0"
+description = "Buidle Fest 2026 protocol for adquire tickets"
 main = "main.tx3"
 
 [registry]
