@@ -15,6 +15,8 @@ We encourage you to explore the [Tx3 language](https://docs.txpipe.io/tx3), but 
 ```js
 tx buy_ticket(
     ticket_name: Bytes, // TICKET + number
+    ticket_price: Int, // Ticket Price in lovelace
+    p_until_slot: Int, // Validity slot
 ) {
     ...
 }
@@ -60,8 +62,10 @@ You need to implement a script that calls the `buyTicketTx` function from the ge
 
 Most of the protocol parameters (like policies and contract addresses) are provided in the `.env` file included by network. You mainly need to provide:
 
-*   `ticketName`: The name of the ticket to mint. It must follow the format `TICKET<N>`, where `<N>` is the current ticket counter.
 *   `buyer`: Your wallet address.
+*   `ticketName`: The name of the ticket to mint. It must follow the format `TICKET<N>`, where `<N>` is the current ticket counter.
+*   `ticketPrice`: The price of the ticket in lovelace (e.g., `20000000` for 20 ADA).
+*   `pUntilSlot`: The slot until which the transaction is valid. You can set this based on the current slot plus some offset.
 
 The other parameters (`adminTokenName`, `adminTokenPolicy`, `ticketPolicy`, `ticketer`, `treasury`) should be loaded from the environment variables.
 
