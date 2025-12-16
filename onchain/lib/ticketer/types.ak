@@ -7,7 +7,6 @@ pub type AssetClass {
 
 pub type TicketerDatum {
   ticket_counter: Int,
-  ticket_policy: PolicyId,
 }
 
 pub type TicketerRedeemer {

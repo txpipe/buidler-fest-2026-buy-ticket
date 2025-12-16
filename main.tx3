@@ -13,7 +13,6 @@ env {
 
 type TicketerDatum {
     ticket_counter: Int,
-    ticket_policy: Bytes,
 }
 
 type TicketerRedeemer {
@@ -26,11 +25,16 @@ type TicketPolicyRedeemer {
 
 tx buy_ticket(
     ticket_name: Bytes, // TICKET + number
+    ticket_price: Int,
+    p_until_slot: Int,
 ) {
     locals {
         new_ticket: AnyAsset(ticket_policy, ticket_name, 1),
         admin_token: AnyAsset(admin_token_policy, admin_token_name, 1),
-        ticket_price: 10000000,
+    }
+
+    validity {
+        until_slot: p_until_slot,
     }
 
     reference TicketerRef {
@@ -59,7 +63,6 @@ tx buy_ticket(
         amount: ticketer,
         datum: TicketerDatum {
             ticket_counter: ticketer.ticket_counter + 1,
-            ticket_policy: ticketer.ticket_policy,
         },
     }
 

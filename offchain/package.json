@@ -1,5 +1,5 @@
 {
-  "name": "ticketer-protocol",
+  "name": "buidler-fest-ticketer",
   "version": "0.0.0",
   "description": "A simple Node.js library for the TX3 protocol",
   "main": "dist/protocol.js",

@@ -1,14 +1,14 @@
 use aiken/collection/dict
 use aiken/collection/list
-use aiken/collection/pairs
+use aiken/interval
 use aiken/primitive/bytearray.{concat, from_string}
 use aiken/primitive/string
-use cardano/address.{Address}
+use cardano/address.{Address, Credential}
 use cardano/assets.{
   PolicyId, ada_asset_name, ada_policy_id, from_asset, quantity_of, tokens,
 }
 use cardano/transaction.{
-  InlineDatum, Output, OutputReference, Spend, Transaction, find_input,
+  InlineDatum, Output, OutputReference, Transaction, find_input,
 }
 use ticketer/types.{
   AssetClass, BurnTicket, BuyTicket, MintTicket, TicketPolicyRedeemer,
@@ -17,7 +17,9 @@ use ticketer/types.{
 
 validator ticketer(
   admin_token: AssetClass,
-  ticket_price: Int,
+  blind_price: Int,
+  normal_price: Int,
+  switch_slot: Int,
   treasury: Address,
   max_tickets: Int,
 ) {
@@ -27,10 +29,11 @@ validator ticketer(
     utxo: OutputReference,
     self: Transaction,
   ) {
-    let Transaction { inputs, outputs, mint, .. } = self
+    let Transaction { inputs, outputs, mint, validity_range, .. } = self
     expect Some(datum) = datum
-    let TicketerDatum { ticket_counter, ticket_policy } = datum
+    let TicketerDatum { ticket_counter } = datum
 
+    expect ticket_counter >= 0
     expect ticket_counter < max_tickets
 
     expect Some(ticketer_input) = find_input(inputs, utxo)
@@ -44,25 +47,34 @@ validator ticketer(
         fn(output) { output.address == ticketer_input.output.address },
       )
     expect Output {
-      address: _,
+      address: ticketer_address,
       value: ticketer_value,
       datum: InlineDatum(ticketer_datum),
       reference_script: None,
     } = ticketer_output
 
+    expect Credential.Script(ticket_policy) =
+      ticketer_address.payment_credential
+
     // Check datum update
     expect ticketer_datum: TicketerDatum = ticketer_datum
     let must_update_datum =
-      ticketer_datum == TicketerDatum {
-        ticket_counter: ticket_counter + 1,
-        ticket_policy,
-      }
+      ticketer_datum == TicketerDatum { ticket_counter: ticket_counter + 1 }
 
     // Check value update (accumulate price)
     let must_hold_admin_token =
       quantity_of(ticketer_value, admin_token.policy, admin_token.name) > 0
 
-    let must_maintain_value = ticketer_value == ticketer_input.output.value
+    let input_value: Data = ticketer_input.output.value
+    let must_maintain_value =
+      assets.match(ticketer_value, input_value, fn(_new, _old) { True })
+
+    let current_price =
+      if interval.is_entirely_before(validity_range, switch_slot) {
+        blind_price
+      } else {
+        normal_price
+      }
 
     let must_pay_treasury =
       list.any(
@@ -72,7 +84,7 @@ validator ticketer(
             output.value,
             ada_policy_id,
             ada_asset_name,
-          ) >= ticket_price
+          ) >= current_price
         },
       )
 
@@ -97,32 +109,23 @@ validator ticketer(
   }
 
   mint(redeemer: TicketPolicyRedeemer, policy_id: PolicyId, self: Transaction) {
-    let Transaction { inputs, mint, redeemers, .. } = self
+    let Transaction { inputs, mint, .. } = self
 
     when redeemer is {
       MintTicket -> {
-        // Check that the ticketer validator is running BuyTicket
-        // We need to find the ticketer input. We can identify it by the admin token.
+        // We need to find the ticketer input. We identify it by the address (policy_id).
 
-        expect [ticketer_input] =
-          list.filter(
+        expect Some(_) =
+          list.find(
             inputs,
             fn(input) {
-              quantity_of(
-                input.output.value,
-                admin_token.policy,
-                admin_token.name,
-              ) > 0
+              input.output.address.payment_credential == Credential.Script(
+                policy_id,
+              )
             },
           )
 
-        // Check that the redeemer for this input is BuyTicket
-        let ticketer_purpose = Spend(ticketer_input.output_reference)
-        let ticketer_redeemer: Data = BuyTicket
-        let must_run_ticketer =
-          pairs.get_all(redeemers, ticketer_purpose) == [ticketer_redeemer]
-
-        must_run_ticketer
+        True
       }
 
       BurnTicket -> {
@@ -132,8 +135,7 @@ validator ticketer(
             |> dict.to_pairs()
 
         // Check that we are burning
-        expect [Pair(_, -1)] = minted_tokens
-        True
+        list.all(minted_tokens, fn(pair) { pair.2nd < 0 })
       }
     }
   }

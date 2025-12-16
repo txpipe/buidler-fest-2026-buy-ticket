@@ -17,7 +17,6 @@ type BuyTestOptions {
   pay_price: Bool,
   include_admin_token: Bool,
   update_counter: Bool,
-  preserve_policy: Bool,
   preserve_price: Bool,
   ticket_counter: Int,
   ticket_price: Int,
@@ -26,6 +25,11 @@ type BuyTestOptions {
   spend_redeemer_present: Bool,
   include_beneficiary_output: Bool,
   max_tickets: Int,
+  blind_price: Int,
+  normal_price: Int,
+  switch_slot: Int,
+  validity_start: Int,
+  validity_end: Int,
 }
 
 fn default_buy_options() {
@@ -33,7 +37,6 @@ fn default_buy_options() {
     pay_price: True,
     include_admin_token: True,
     update_counter: True,
-    preserve_policy: True,
     preserve_price: True,
     ticket_counter: 7,
     ticket_price: 2_000_000,
@@ -42,12 +45,17 @@ fn default_buy_options() {
     spend_redeemer_present: True,
     include_beneficiary_output: True,
     max_tickets: 100,
+    blind_price: 2_000_000,
+    normal_price: 3_000_000,
+    switch_slot: 20_000,
+    validity_start: 1,
+    validity_end: 10_000,
   }
 }
 
 fn construct_tx(
   options: BuyTestOptions,
-) -> (Transaction, TicketerDatum, AssetClass, Int, Address) {
+) -> (Transaction, TicketerDatum, AssetClass, Address) {
   let ticket_policy = mock.ticketer_policy
   // Reusing a mock policy
   let admin_token =
@@ -55,7 +63,7 @@ fn construct_tx(
   let redeemer = BuyTicket
   let ticketer_address =
     Address {
-      payment_credential: Script(mock.ticketer_credential),
+      payment_credential: Script(ticket_policy),
       // Reusing a mock credential
       stake_credential: None,
     }
@@ -71,8 +79,7 @@ fn construct_tx(
     } else {
       from_lovelace(10_000_000)
     }
-  let ticketer_datum =
-    TicketerDatum { ticket_counter: options.ticket_counter, ticket_policy }
+  let ticketer_datum = TicketerDatum { ticket_counter: options.ticket_counter }
   let ticketer_in = {
     let output =
       Output {
@@ -95,11 +102,6 @@ fn construct_tx(
             options.ticket_counter + 1
           } else {
             options.ticket_counter
-          },
-          ticket_policy: if options.preserve_policy {
-            ticket_policy
-          } else {
-            "ffff"
           },
         },
       ),
@@ -142,9 +144,12 @@ fn construct_tx(
       certificates: [],
       withdrawals: [],
       validity_range: Interval {
-        lower_bound: IntervalBound { bound_type: Finite(1), is_inclusive: True },
+        lower_bound: IntervalBound {
+          bound_type: Finite(options.validity_start),
+          is_inclusive: True,
+        },
         upper_bound: IntervalBound {
-          bound_type: Finite(10_000),
+          bound_type: Finite(options.validity_end),
           is_inclusive: True,
         },
       },
@@ -196,18 +201,19 @@ fn construct_tx(
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  (tx, ticketer_datum, admin_token, options.ticket_price, beneficiary)
+  (tx, ticketer_datum, admin_token, beneficiary)
 }
 
 fn buy_ticket(options: BuyTestOptions) -> Bool {
-  let (tx, ticketer_datum, admin_token, ticket_price, beneficiary) =
-    construct_tx(options)
+  let (tx, ticketer_datum, admin_token, beneficiary) = construct_tx(options)
   let redeemer = BuyTicket
 
   let result =
     ticketer.ticketer.spend(
       admin_token,
-      ticket_price,
+      options.blind_price,
+      options.normal_price,
+      options.switch_slot,
       beneficiary,
       options.max_tickets,
       Some(ticketer_datum),
@@ -219,12 +225,14 @@ fn buy_ticket(options: BuyTestOptions) -> Bool {
 }
 
 fn mint_ticket(options: BuyTestOptions) -> Bool {
-  let (tx, _ticketer_datum, admin_token, ticket_price, beneficiary) =
-    construct_tx(options)
+  let (tx, _ticketer_datum, admin_token, beneficiary) = construct_tx(options)
   let ticket_policy = mock.ticketer_policy
+
   ticketer.ticketer.mint(
     admin_token,
-    ticket_price,
+    options.blind_price,
+    options.normal_price,
+    options.switch_slot,
     beneficiary,
     options.max_tickets,
     MintTicket,
@@ -241,12 +249,6 @@ test mint_ok() {
   mint_ticket(default_buy_options())
 }
 
-test mint_fail_no_spend() fail {
-  mint_ticket(
-    BuyTestOptions { ..default_buy_options(), spend_redeemer_present: False },
-  )
-}
-
 test no_price_paid() fail {
   buy_ticket(BuyTestOptions { ..default_buy_options(), pay_price: False })
 }
@@ -259,10 +261,6 @@ test no_admin_token() fail {
 
 test counter_not_updated() fail {
   buy_ticket(BuyTestOptions { ..default_buy_options(), update_counter: False })
-}
-
-test policy_not_preserved() fail {
-  buy_ticket(BuyTestOptions { ..default_buy_options(), preserve_policy: False })
 }
 
 test price_not_preserved() fail {
@@ -311,4 +309,58 @@ test max_tickets_reached() fail {
 test max_tickets_ok() {
   // Default counter is 7, so with max_tickets 8 it should pass
   buy_ticket(BuyTestOptions { ..default_buy_options(), max_tickets: 8 })
+}
+
+test buy_ok_blind_price() {
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      ticket_price: 2_000_000,
+      blind_price: 2_000_000,
+      switch_slot: 20_000,
+      validity_start: 10_000,
+      validity_end: 15_000,
+    },
+  )
+}
+
+test buy_error_blind_price() fail {
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      ticket_price: 2_000_000,
+      blind_price: 2_000_000,
+      switch_slot: 20_000,
+      validity_start: 18_000,
+      validity_end: 22_000,
+    },
+  )
+}
+
+test buy_ok_normal_price() {
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      ticket_price: 3_000_000,
+      blind_price: 2_000_000,
+      normal_price: 3_000_000,
+      switch_slot: 22_000,
+      validity_start: 20_000,
+      validity_end: 30_000,
+    },
+  )
+}
+
+test buy_ok_overlap_price() {
+  buy_ticket(
+    BuyTestOptions {
+      ..default_buy_options(),
+      ticket_price: 3_000_000,
+      blind_price: 2_000_000,
+      normal_price: 3_000_000,
+      switch_slot: 20_000,
+      validity_start: 15_000,
+      validity_end: 25_000,
+    },
+  )
 }

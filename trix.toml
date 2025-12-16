@@ -1,5 +1,5 @@
 [protocol]
-name = "ticketer-protocol"
+name = "buidler-fest-ticketer"
 scope = "txpipe"
 version = "0.1.0"
 description = "Buidle Fest 2026 protocol for adquire tickets"
