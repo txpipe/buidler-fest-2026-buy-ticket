@@ -1,79 +1,66 @@
 party Buyer;
 
-party Ticketer;
+party Issuer;
 
 party Treasury;
 
 env {
-    admin_token_policy: Bytes,
-    admin_token_name: Bytes,
+    issuer_beacon_policy: Bytes,
+    issuer_beacon_name: Bytes,
     ticket_policy: Bytes,
-    ticketer_script: UtxoRef,
+    issuer_script_ref: UtxoRef,
 }
 
-type TicketerDatum {
+type IssuerState {
     ticket_counter: Int,
 }
 
-type TicketerRedeemer {
-    BuyTicket,
-}
-
-type TicketPolicyRedeemer {
-    MintTicket,
-}
-
 tx buy_ticket(
-    ticket_name: Bytes, // TICKET + number
-    ticket_price: Int,
-    p_until_slot: Int,
+    ticket_number: Int
 ) {
     locals {
-        new_ticket: AnyAsset(ticket_policy, ticket_name, 1),
-        admin_token: AnyAsset(admin_token_policy, admin_token_name, 1),
+        ticket_price: 400000000,
+        ticket_token: AnyAsset(ticket_policy, concat("TICKET", ticket_number), 1),
+        issuer_beacon: AnyAsset(issuer_beacon_policy, issuer_beacon_name, 1),
     }
 
-    validity {
-        until_slot: p_until_slot,
+    reference issuer_script {
+        ref: issuer_script_ref,
     }
 
-    reference TicketerRef {
-        ref: ticketer_script,
-    }
-
-    input* payment {
+    input* funds {
         from: Buyer,
-        min_amount: fees + Ada(ticket_price) + min_utxo(payment_change),
+        min_amount: fees + Ada(ticket_price) + min_utxo(ticket),
     }
 
-    input ticketer {
-        from: Ticketer,
-        min_amount: admin_token,
-        datum_is: TicketerDatum,
-        redeemer: TicketerRedeemer::BuyTicket {},
+    input current_state {
+        from: Issuer,
+        min_amount: issuer_beacon,
+        datum_is: IssuerState,
+        redeemer: (),
     }
     
     mint {
-        amount: new_ticket,
-        redeemer: TicketPolicyRedeemer::MintTicket {},
+        amount: ticket_token,
+        redeemer: (),
     }
 
-    output updated_ticketer {
-        to: Ticketer,
-        amount: ticketer,
-        datum: TicketerDatum {
-            ticket_counter: ticketer.ticket_counter + 1,
+    output ticket {
+        to: Buyer,
+        amount: payment - fees - Ada(ticket_price) + ticket_token,
+    }
+
+    output new_state {
+        to: Issuer,
+        amount: issuer_beacon,
+        datum: IssuerState {
+            ticket_counter: current_state.ticket_counter + 1,
         },
     }
 
-    output pay_for_ticket {
+    output payment {
         to: Treasury,
         amount: Ada(ticket_price),
-    }
-
-    output payment_change {
-        to: Buyer,
-        amount: payment - fees - Ada(ticket_price) + new_ticket,
     }
 
     collateral {
