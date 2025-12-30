@@ -16,12 +16,22 @@ type IssuerState {
 }
 
 tx buy_ticket(
-    ticket_number: Int
+    ticket_name: Bytes
 ) {
     locals {
+        // blind ticket price
         ticket_price: 400000000,
-        ticket_token: AnyAsset(ticket_policy, concat("TICKET", ticket_number), 1),
+        
+        // normal ticket price
+        // ticket_price: 500000000,
+
+        ticket_token: AnyAsset(ticket_policy, ticket_name, 1),
         issuer_beacon: AnyAsset(issuer_beacon_policy, issuer_beacon_name, 1),
+    }
+
+    validity {
+        // txs will be valid to submit from when they are created +10 mins
+        until_slot: tip_slot() + 600,
     }
 
     reference issuer_script {
@@ -47,12 +57,12 @@ tx buy_ticket(
 
     output ticket {
         to: Buyer,
-        amount: payment - fees - Ada(ticket_price) + ticket_token,
+        amount: funds - fees - Ada(ticket_price) + ticket_token,
     }
 
     output new_state {
         to: Issuer,
-        amount: issuer_beacon,
+        amount: current_state,
         datum: IssuerState {
             ticket_counter: current_state.ticket_counter + 1,
         },

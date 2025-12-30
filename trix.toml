@@ -4,3 +4,6 @@ scope = "buidler-fest"
 version = "0.1.0"
 description = "Buidler Fest 2026 protocol for purchasing tickets"
 main = "main.tx3"
+
+[ledger]
+family = "cardano"
