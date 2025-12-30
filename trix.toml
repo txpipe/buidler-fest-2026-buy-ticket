@@ -1,38 +1,9 @@
 [protocol]
-name = "buidler-fest-ticketer"
-scope = "txpipe"
+name = "ticketing-2026"
+scope = "buidler-fest"
 version = "0.1.0"
-description = "Buidle Fest 2026 protocol for adquire tickets"
+description = "Buidler Fest 2026 protocol for purchasing tickets"
 main = "main.tx3"
 
-[registry]
-url = "https://tx3.land"
-
-[profiles.preview]
-chain = "CardanoPreview"
-
-[profiles.mainnet]
-chain = "CardanoMainnet"
-
-[profiles.devnet]
-chain = "CardanoDevnet"
-
-[profiles.preprod]
-chain = "CardanoPreprod"
-
-[[wallets]]
-name = "alice"
-random_key = true
-
-[[wallets]]
-name = "bob"
-random_key = true
-
-[[bindings]]
-output_dir = "./offchain"
-# options = { standalone = true }
-
-[bindings.template]
-repo = "tx3-lang/web-sdk"
-path = ".trix/client-lib"
-ref = "bindgen-v1alpha2"
+[ledger]
+family = "cardano"

@@ -1,3 +1,6 @@
+# tx3 artifacts
+.tx3
+
 # Aiken compilation artifacts
 onchain/artifacts/
 # Aiken's project working directory
@@ -6,3 +9,4 @@ onchain/build/
 onchain/docs/
 
 offchain/node_modules
+
