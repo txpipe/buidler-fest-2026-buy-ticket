@@ -9,28 +9,21 @@ env {
     issuer_beacon_name: Bytes,
     ticket_policy: Bytes,
     issuer_script_ref: UtxoRef,
+    ticket_price: Int,
 }
 
 type IssuerState {
     ticket_counter: Int,
 }
 
-tx buy_ticket(
-    ticket_name: Bytes
-) {
+tx buy_ticket() {
     locals {
-        // blind ticket price
-        ticket_price: 400000000,
-        
-        // normal ticket price
-        // ticket_price: 500000000,
-
-        ticket_token: AnyAsset(ticket_policy, ticket_name, 1),
         issuer_beacon: AnyAsset(issuer_beacon_policy, issuer_beacon_name, 1),
+        ticket_name: concat("TICKET", current_state.ticket_counter),
+        ticket_token: AnyAsset(ticket_policy, ticket_name, 1),
     }
 
     validity {
-        // txs will be valid to submit from when they are created +10 mins
         until_slot: tip_slot() + 600,
     }
 
@@ -49,6 +42,7 @@ tx buy_ticket(
         datum_is: IssuerState,
         redeemer: (),
     }
+
     
     mint {
         amount: ticket_token,
