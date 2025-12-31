@@ -16,9 +16,9 @@ Tx3 is a toolkit for authoring and interacting with UTxO procotols. Think of "UT
 
 In this case, the protocol we want to interact with is the "Buidler Fest Ticketing System". It's a great example for learning Tx3 since it has a little bit of everything, without getting too complex.
 
+## Tutorial
 
-
-## 1. Install and update the Tx3 toolchain
+### 1. Install and update the Tx3 toolchain
 
 The first step is to install the toolchain. If you don't have the Tx3 toolchain already insalled, follow the [install instructions](https://docs.txpipe.io/tx3/installation) on the documentation site.
 
@@ -30,7 +30,7 @@ To make sure you're in the latest version of everything, run:
 tx3up
 ```
 
-## 2. Clone this repo
+### 2. Clone this repo
 
 This repo contains an implementation of the Ticketing System protocol already finished. You should clone this repo locally to be able to follow the rest of the tutorial.
 
@@ -41,9 +41,39 @@ cd buidler-fest-2026-buy-ticket
 
 > Tip: all commands below assume you're in the repo root.
 
----
+### 3. Meet the protocol: A ticketing system
 
-## 3. Meet the protocol: `main.tx3`
+What we're trying to acomplish it to buy a ticket to attend Buidler Fest 2026. Tickets are represented as Cardano native tokens. Each ticket is an NFT associated to a unique, sequential number. The ownership of this NFT is transferred to the buyer when the transaction is submitted.
+
+This is the diagram that represents the ticket purchase transaction:
+
+![Ticketing system diagram](tx1-diagram.svg)
+
+We have 3 parties involved in the transaction:
+
+- `buyer`: You, the one who wants to purchase the ticket.
+- `issuer`: The script responsible for validating the minting of the ticket NFT.
+- `treasury`: A holding account that will receive the ADA for all ticket purchases.
+
+The transaction takes 2 inputs:
+
+- `funds`: This input represents the funds for the ticket purchase and must contain enough ADA to cover the ticket price and transaction fees.
+- `current state`: This input contains the current state of the whole registration process (a datum with the current ticket count)
+
+The transaction has 3 outputs:
+
+- `ticket + change`: This output contains the minted ticket NFT and whatever change is left over from the payment.
+- `new state`: This output contains the updated state of the registration process (the same datum with an incremented ticket count)
+- `payment`: This output contains the ADA for the ticket purchase.
+
+To be accepted on-chain, the tx must respect the following constraints:
+
+- The transaction must pay the ticket price to the treasury.
+- The shared state ticket counter must be incremented by exactly 1.
+- The ascii name of the ticket asset must be TICKET{x} where {x} is the ticket number.
+- Ticket price must be: 400 ADA if submitted before 2026-Feb-01 12:00 UTC.
+
+### 4. Meet the syntax: `main.tx3`
 
 Tx3, among other things, comes with a DSL for describing an UTxO protocol. It allows protocol authors to describe the interface of their system in terms of parties involved, policies and transactions that can be invoked.
 
@@ -135,8 +165,9 @@ Key ideas worth noticing:
 - **UTxOs as State**: `IssuerState` keeps a counter so each ticket name is unique. Tx3 uses typed datums so you don't get lost in opaque blobs. Notice that the state of the protocol is being retrieved at runtime, allowing you to describe your protocols as a derivation of the dynamic state on-chain.
 - **Transaction as functions**: `tx buy_ticket()` declares inputs, outputs, minting, and validity window. The DSL is strongly typed and keeps the flow readable (no more scrolling through JSON by hand). The goal is that to treat your protocol as a set of tx functions that express the user intents.
 - **Custom expressions**: notice that there's no hardcoded value or parameter that you need to pass. Tx3 gives you basic primitives and operators that allows you to describe your outputs as expressions over the state and paramters.
+- **Stongly Typed**: `IssuerState` is an example of a custom type that enforces the shape of datums, redeemers and other data structures in the protocol.
 
-## 4. Generate the unsigned transaction with `trix`
+### 5. Generate the unsigned transaction with `trix`
 
 We're going to ask `trix` to build the ticket purchase transaction for mainnet, but **not** submit it yet. That way you can sign it in your wallet of choice.
 
@@ -164,7 +195,7 @@ The `cbor` field is the raw unsigned transaction. Copy it all—no whitespace tr
 
 > Want to see more flags or profiles? Check the [Tx3 CLI docs](https://docs.txpipe.io/tx3/tooling/trix) for all the knobs.
 
-## 5. Sign and submit from your wallet
+### 6. Sign and submit from your wallet
 
 Tx3 intentionally stops short of signing for you—that part is on your wallet so you keep control of keys. Use any wallet that supports CBOR import. The flow is usually:
 
@@ -175,13 +206,7 @@ Tx3 intentionally stops short of signing for you—that part is on your wallet s
 
 If everything goes well, the wallet will show the transaction hash and your fresh ticket asset. The `hash` printed by `trix` is your pre-sign hash—handy for double-checking you're signing what you built.
 
-## 6. Why this showcases Tx3 (aka what you just learned)
-
-- **Declarative protocols**: The entire ticketing logic is expressed in one readable DSL file. No hunting for off-chain helpers scattered across scripts.
-- **Typed datums and redeemers**: `IssuerState` isn't just a comment—`trix` enforces the shape, so you don't accidentally feed wrong data to validators.
-- **Profiles and environments**: The values in `trix.toml` let you target different networks or price points without rewriting the protocol.
-- **Client ergonomics**: `trix invoke` hides the ledger plumbing (UTxO selection, change, collateral, minting policies) while still being auditable because it's derived from `main.tx3`.
-- **Offline friendliness**: Generating unsigned CBOR means you can keep keys in cold storage and still use the protocol.
+## What's next?
 
 Want to go deeper? The [official Tx3 docs](https://docs.txpipe.io/tx3) cover the DSL, standard library, and more involved protocol patterns. Once you've bagged your ticket, try tweaking `main.tx3` and see how `trix` reacts—it's a great way to learn.
 
