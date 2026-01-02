@@ -41,6 +41,23 @@ cd buidler-fest-2026-buy-ticket
 
 > Tip: all commands below assume you're in the repo root.
 
+The cloned repo has the following project structure:
+
+```
+.
+├── trix.toml
+├── main.tx3
+├── .env.mainnet
+├── .env.preview
+└── onchain/
+```
+
+- `trix.toml` - Tx3 protocol configuration file defining metadata and main protocol entry point
+- `main.tx3` - Tx3 DSL file describing the ticketing protocol (parties, transactions, constraints)
+- `.env.mainnet` - Environment configuration file containing runtime parameters for mainnet network
+- `.env.preview` - Environment configuration file containing runtime parameters for preview network
+- `onchain/` - Directory containing on-chain smart contract validators written in Aiken
+
 ### 3. Meet the protocol: A ticketing system
 
 What we're trying to accomplish is to buy a ticket to attend Buidler Fest 2026. Tickets are represented as Cardano native tokens. Each ticket is an NFT associated to a unique, sequential number. The ownership of this NFT is transferred to the buyer when the transaction is submitted.
