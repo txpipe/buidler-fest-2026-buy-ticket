@@ -12,7 +12,7 @@ If you're in a hurry and just want your ticket, follow the [I don't have time fo
 
 You've heard about Tx3 but never had enough time to check it out? Well, this is your chance.
 
-Tx3 is a toolkit for authoring and interacting with UTxO procotols. Think of "UTxO Protocol" as the API to your dApp. The best analogy we have is to think of Tx3 as the "Open API" for blockchain.
+Tx3 is a toolkit for authoring and interacting with UTxO protocols. Think of "UTxO Protocol" as the API to your dApp. The best analogy we have is to think of Tx3 as the "Open API" for blockchain.
 
 In this case, the protocol we want to interact with is the "Buidler Fest Ticketing System". It's a great example for learning Tx3 since it has a little bit of everything, without getting too complex.
 
@@ -20,7 +20,7 @@ In this case, the protocol we want to interact with is the "Buidler Fest Ticketi
 
 ### 1. Install and update the Tx3 toolchain
 
-The first step is to install the toolchain. If you don't have the Tx3 toolchain already insalled, follow the [install instructions](https://docs.txpipe.io/tx3/installation) on the documentation site.
+The first step is to install the toolchain. If you don't have the Tx3 toolchain already installed, follow the [install instructions](https://docs.txpipe.io/tx3/installation) on the documentation site.
 
 Once you're done, you should have a new binary installed called `tx3up`. `tx3up` is our toolchain manager, it takes care of installs and versions of the different components of the Tx3 toolkit.
 
@@ -43,7 +43,7 @@ cd buidler-fest-2026-buy-ticket
 
 ### 3. Meet the protocol: A ticketing system
 
-What we're trying to acomplish it to buy a ticket to attend Buidler Fest 2026. Tickets are represented as Cardano native tokens. Each ticket is an NFT associated to a unique, sequential number. The ownership of this NFT is transferred to the buyer when the transaction is submitted.
+What we're trying to accomplish is to buy a ticket to attend Buidler Fest 2026. Tickets are represented as Cardano native tokens. Each ticket is an NFT associated to a unique, sequential number. The ownership of this NFT is transferred to the buyer when the transaction is submitted.
 
 This is the diagram that represents the ticket purchase transaction:
 
@@ -77,7 +77,7 @@ To be accepted on-chain, the tx must respect the following constraints:
 
 Tx3, among other things, comes with a DSL for describing an UTxO protocol. It allows protocol authors to describe the interface of their system in terms of parties involved, policies and transactions that can be invoked.
 
-> Tip: if you're using VSCode or any of their forks search for the Tx3 VSCode extension, it will provide nice syntax highligthing and LSP features.
+> Tip: if you're using VSCode or any of their forks search for the Tx3 VSCode extension, it will provide nice syntax highlighting and LSP features.
 
 Here's the Buidler Fest Ticketing protocol described using the Tx3 DSL:
 
@@ -164,8 +164,8 @@ Key ideas worth noticing:
 - **Environment**: everything under `env { ... }` are parameters the protocol expects at runtime. For example, `ticket_policy` is pulled in when building the transaction, not hardcoded. This allows you to have a single .tx3 that is compatible with different contexts (eg: mainnet vs preview).
 - **UTxOs as State**: `IssuerState` keeps a counter so each ticket name is unique. Tx3 uses typed datums so you don't get lost in opaque blobs. Notice that the state of the protocol is being retrieved at runtime, allowing you to describe your protocols as a derivation of the dynamic state on-chain.
 - **Transaction as functions**: `tx buy_ticket()` declares inputs, outputs, minting, and validity window. The DSL is strongly typed and keeps the flow readable (no more scrolling through JSON by hand). The goal is that to treat your protocol as a set of tx functions that express the user intents.
-- **Custom expressions**: notice that there's no hardcoded value or parameter that you need to pass. Tx3 gives you basic primitives and operators that allows you to describe your outputs as expressions over the state and paramters.
-- **Stongly Typed**: `IssuerState` is an example of a custom type that enforces the shape of datums, redeemers and other data structures in the protocol.
+- **Custom expressions**: notice that there's no hardcoded value or parameter that you need to pass. Tx3 gives you basic primitives and operators that allows you to describe your outputs as expressions over the state and parameters.
+- **Strongly Typed**: `IssuerState` is an example of a custom type that enforces the shape of datums, redeemers and other data structures in the protocol.
 
 ### 5. Generate the unsigned transaction with `trix`
 
