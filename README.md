@@ -223,6 +223,10 @@ Tx3 intentionally stops short of signing for you—that part is on your wallet s
 
 If everything goes well, the wallet will show the transaction hash and your fresh ticket asset. The `hash` printed by `trix` is your pre-sign hash—handy for double-checking you're signing what you built.
 
+###  7. Complete the KYC
+
+Make sure you complete our [KYC form](https://forms.gle/ziKXTWdz9oefm2DP8) to complete the registration once you finish your purchase transaction.
+
 ## What's next?
 
 Want to go deeper? The [official Tx3 docs](https://docs.txpipe.io/tx3) cover the DSL, standard library, and more involved protocol patterns. Once you've bagged your ticket, try tweaking `main.tx3` and see how `trix` reacts—it's a great way to learn.

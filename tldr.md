@@ -48,3 +48,7 @@ You'll get a JSON output that looks like the following:
 - import it from a wallet that supports CBOR input
 - use your wallet UI to validate the tx, make sure you're paying 400A and that you get a TICKET#` token back
 - use your wallet to sign & submit the tx.
+
+## 5. Complete the KYC
+
+Make sure you complete our [KYC form](https://forms.gle/ziKXTWdz9oefm2DP8) to complete the registration once you finish your purchase transaction.
